@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title>D3 Drilldown Chart</title>
+<!-- 
+Avalon Template 
+http://www.templatemo.com/tm-513-avalon
+-->
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/bootstrap-theme.min.css">
+        <link rel="stylesheet" href="css/fontAwesome.css">
+        <link rel="stylesheet" href="css/hero-slider.css">
+        <link rel="stylesheet" href="css/owl-carousel.css">
+        <link rel="stylesheet" href="css/datepicker.css">
+        <link rel="stylesheet" href="css/templatemo-style.css">
+
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800" rel="stylesheet">
+
+        <script src="js/vendor/modernizr-2.8.3-respond-1.4.2.min.js"></script>
+    </head>
+
+<body>
+
+    <section class="best-offer" id=best-offer-section>
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="best-offer-left-content">
+                        <div class="icon"><img src="img/best-offer-icon.png" alt=""></div>
+                        <h4>Drilldown Charts</h4>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="best-offer-right-content">
+                        <div class="row">
+                            <div class="col-md-6 col-sm-12">
+                                <h2><em>Drilldown Charts</em></h2>
+								<font size="3">
+                                <p>Drilldown functionality in chart is used to explore data <br />
+								<strong>in more depth</strong> to reveal additional details.</p>
+								
+								<p>As seen from the chart on the right, among all 3 main categories, this shipping company had shipped mostly 'Office Supplies' as compared to the other two categories. <br />
+									When clicking on one of the category, the chart is drilled down to a sub-category level, where it shows a breakdown of each individual items the company had shipped. <br /> <br />
+									This information would be important for the shipping company as relevant departments are able to identify the popular items and come out with the right marketing strategies to 
+									target to the right customers which would benefit both parties.
+                                </font>
+                                
+                            </div>
+                            <div class="col-md-6 col-sm-12">
+                        <script src="https://code.jquery.com/jquery-1.12.4.min.js" charset="utf-8"></script>
+						<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+						<script src="https://d3js.org/d3.v4.min.js"></script>
+							<div id="Barchart" style="height:545px;width:400px">
+							<p style="position: relative; left:80px; bottom: 25px;"><strong>Total Number of Items Shipped per Category</strong></p>
+							<p style="position: relative; left:120px; bottom:50px; ">Click to view individual sub-category</p>
+							<div class="barCont" style="overflow: auto; bottom:70px; height:81% ; width:100%; position: relative; overflow: hidden;"></div>
+							</div>
+
+
+						<script type="text/javascript">
+							var salesData;
+							var truncLength = 30;
+							$(document).ready(function () {
+								Plot();
+							});
+							function Plot() {
+								TransformChartData(chartData, chartOptions);
+								BuildBar("Barchart", chartData, chartOptions);
+							}
+
+							function BuildBar(id, chartData, options, level) {
+								chart = d3.select("#" + id + " .barCont");
+
+								var marginBar = { top: 50, right: 10, bottom: 30, left: 50 },
+								width = $($("#" + id + " .barCont")[0]).outerWidth() - marginBar.left - marginBar.right,
+								height = $($("#" + id + " .barCont")[0]).outerHeight() - marginBar.top - marginBar.bottom
+								var xVarName;
+								var yVarName = options[0].yaxis;
+
+								if (level == 1) {
+									xVarName = options[0].xaxisl1;
+								}
+								else {
+									xVarName = options[0].xaxis;
+								}
+
+								var xAry = runningData.map(function (el) {
+									return el[xVarName];
+								});
+
+								var yAry = runningData.map(function (el) {
+									return el[yVarName];
+								});
+
+								var capAry = runningData.map(function (el) { return el.caption; });
+
+
+								var x = d3.scaleBand().domain(xAry).rangeRound([0, width], .5);
+								var y = d3.scaleLinear().domain([0, d3.max(runningData, function (d) { return d[yVarName]; })]).range([height, 0]);
+								var rcolor = d3.scaleOrdinal().range(runningColors);
+
+								chart = chart
+											.append("svg")  //append svg element inside #chart
+											.attr("width", width + marginBar.left + marginBar.right)    //set width
+											.attr("height", height + marginBar.top + marginBar.bottom);  //set height
+
+								var bar = chart.selectAll("g")
+												.data(runningData)
+												.enter()
+												.append("g")
+												.attr("transform", function (d) {
+													return "translate(" + x(d[xVarName]) + ", 0)";
+												});
+
+								var ctrtxt = 0;
+								var xAxis = d3.axisBottom()
+											.scale(x)
+											.ticks(xAry.length)
+											.tickFormat(function (d) {
+												if (level == 0) {
+													var mapper = options[0].captions[0]
+													return mapper[d]
+												}
+												else {
+													var r = runningData[ctrtxt].caption;
+													ctrtxt += 1;
+													return r;
+												}
+											});
+
+								var yAxis = d3.axisLeft()
+												.scale(y)
+												.ticks(5); //orient left because y-axis tick labels will appear on the left side of the axis.
+
+								bar.append("rect")
+									.attr("y", function (d) {
+										return y(d.Total) + marginBar.top - 15;
+									})
+									.attr("x", function (d) {
+										return (marginBar.left + (x.bandwidth()) / 4);
+									})
+									.on("mouseenter", function (d) {
+										d3.select(this)
+											.attr("stroke", "white")
+											.attr("stroke-width", 1)
+											.attr("y", function (d) {
+												return y(d.Total) + marginBar.top - 20;
+											})
+											.attr("height", function (d) {
+												return height - y(d[yVarName]) + 5;
+											})
+											.attr("x", function (d) {
+												return (marginBar.left - 5 + (x.bandwidth()) / 4);
+											})
+											.attr("width", (x.bandwidth())/2 + 10)
+											.transition()
+											.duration(200);
+
+
+									})
+									.on("mouseleave", function (d) {
+										d3.select(this)
+											.attr("stroke", "none")
+											.attr("y", function (d) {
+												return y(d[yVarName]) + marginBar.top - 15;
+											})
+											.attr("height", function (d) {
+												return height - y(d[yVarName]);
+											})
+											.attr("x", function (d) {
+												return (marginBar.left + (x.bandwidth()) / 4);
+											})
+											.attr("width", (x.bandwidth()) / 2)
+											.transition()
+											.duration(200);
+
+									})
+									.on("click", function (d) {
+										if (this._listenToEvents) {
+											// Reset inmediatelly
+											d3.select(this).attr("transform", "translate(0,0)")
+											// Change level on click if no transition has started
+											path.each(function () {
+												this._listenToEvents = false;
+											});
+										}
+										d3.selectAll("#" + id + " svg").remove();
+										if (level == 1) {
+											TransformChartData(chartData, options, 0, d[xVarName]);
+											BuildBar(id, chartData, options, 0);
+										}
+										else {
+											var nonSortedChart = chartData.sort(function (a, b) {
+												return parseFloat(b[options[0].yaxis]) - parseFloat(a[options[0].yaxis]);
+											});
+											TransformChartData(nonSortedChart, options, 1, d[xVarName]);
+											BuildBar(id, nonSortedChart, options, 1);
+										}
+
+									});
+
+
+								bar.selectAll("rect")
+								.transition()
+								.duration(1000)
+								.attr("height", function (d) {
+									return height - y(d[yVarName]);
+								})
+								.attr("width", (x.bandwidth()) / 2); //set width base on range on ordinal data;
+
+								//setTimeout( 1000)
+								bar.selectAll("rect").style("fill", function (d) {
+									return rcolor(d[xVarName]);
+								}),
+
+								bar.append("text")
+									.attr("x", x.bandwidth() / 2 + marginBar.left - 10)
+									.attr("y", function (d) { return y(d[yVarName]) + marginBar.top - 25; })
+									.attr("dy", ".35em")
+									.text(function (d) {
+										return d[yVarName];
+									});
+
+								bar.append("svg:title")
+									.text(function (d) {
+										return d["title"] + " (" + d[yVarName] + ")";
+									});
+
+
+								chart.append("g")
+									.attr("class", "x axis")
+									.attr("transform", "translate(" + marginBar.left + "," + (height + marginBar.top - 15) + ")")
+									.call(xAxis)
+								.append("text")
+									.attr("x", width)
+									.attr("y", -6)
+								.style("text-anchor", "end")
+								//.text("Year");
+
+								chart.append("g")
+									.attr("class", "y axis")
+									.attr("transform", "translate(" + marginBar.left + "," + (marginBar.top - 15) + ")")
+									.call(yAxis)
+									.append("text")
+									.attr("transform", "rotate(-90)")
+									.attr("y", 6)
+									.attr("dy", ".71em")
+									.style("text-anchor", "end")
+
+								if (level == 1) {
+									chart.select(".x.axis")
+									.selectAll("text")
+									.attr("transform", " translate(-20,10) rotate(-35)");
+								}
+
+							}
+
+							function TransformChartData(chartData, opts, level, filter) {
+								var result = [];
+								var resultColors = [];
+								var counter = 0;
+								var hasMatch;
+								var xVarName;
+								var yVarName = opts[0].yaxis;
+
+								if (level == 1) {
+									xVarName = opts[0].xaxisl1;
+
+									for (var i in chartData) {
+										hasMatch = false;
+										for (var index = 0; index < result.length; ++index) {
+											var data = result[index];
+
+											if ((data[xVarName] == chartData[i][xVarName]) && (chartData[i][opts[0].xaxis]) == filter) {
+												result[index][yVarName] = result[index][yVarName] + chartData[i][yVarName];
+												hasMatch = true;
+												break;
+											}
+
+										}
+										if ((hasMatch == false) && ((chartData[i][opts[0].xaxis]) == filter)) {
+											if (result.length < 9) {
+												ditem = {}
+												ditem[xVarName] = chartData[i][xVarName];
+												ditem[yVarName] = chartData[i][yVarName];
+												ditem["caption"] = chartData[i][xVarName].substring(0, 10) + '...';
+												ditem["title"] = chartData[i][xVarName];
+												ditem["op"] = 1.0 - parseFloat("0." + (result.length));
+												result.push(ditem);
+
+												resultColors[counter] = opts[0].color[0][chartData[i][opts[0].xaxis]];
+
+												counter += 1;
+											}
+										}
+									}
+								}
+								else {
+									xVarName = opts[0].xaxis;
+
+									for (var i in chartData) {
+										hasMatch = false;
+										for (var index = 0; index < result.length; ++index) {
+											var data = result[index];
+
+											if (data[xVarName] == chartData[i][xVarName]) {
+												result[index][yVarName] = result[index][yVarName] + chartData[i][yVarName];
+												hasMatch = true;
+												break;
+											}
+										}
+										if (hasMatch == false) {
+											ditem = {};
+											ditem[xVarName] = chartData[i][xVarName];
+											ditem[yVarName] = chartData[i][yVarName];
+											ditem["caption"] = opts[0].captions != undefined ? opts[0].captions[0][chartData[i][xVarName]] : "";
+											ditem["title"] = opts[0].captions != undefined ? opts[0].captions[0][chartData[i][xVarName]] : "";
+											ditem["op"] = 1;
+											result.push(ditem);
+
+											resultColors[counter] = opts[0].color != undefined ? opts[0].color[0][chartData[i][xVarName]] : "";
+
+											counter += 1;
+										}
+									}
+								}
+
+
+								runningData = result;
+								runningColors = resultColors;
+								return;
+							}
+
+
+							var chartData = [
+								{
+									"Category": "Furniture",
+									"Sub-Category": "Bookcases",
+									"Total": 276
+								},
+								{
+									"Category": "Furniture",
+									"Sub-Category": "Chairs",
+									"Total": 674
+								},
+								{
+									"Category": "Furniture",
+									"Sub-Category": "Furnishings",
+									"Total": 1097
+								},
+								{
+									"Category": "Furniture",
+									"Sub-Category": "Tables",
+									"Total": 390
+								},
+								{
+									"Category": "Office Supplies",
+									"Sub-Category": "Applicances",
+									"Total": 654
+								},
+								{
+									"Category": "Office Supplies",
+									"Sub-Category": "Art",
+									"Total": 1101
+								},
+								{
+									"Category": "Office Supplies",
+									"Sub-Category": "Binders",
+									"Total": 2067
+								},
+								{
+									"Category": "Office Supplies",
+									"Sub-Category": "Envelopes",
+									"Total": 241
+								},
+								{
+									"Category": "Office Supplies",
+									"Sub-Category": "Fasteners",
+									"Total": 249
+								},
+								{
+									"Category": "Office Supplies",
+									"Sub-Category": "Labels",
+									"Total": 448
+								},
+								{
+									"Category": "Office Supplies",
+									"Sub-Category": "Paper",
+									"Total": 1702
+								},
+								{
+									"Category": "Office Supplies",
+									"Sub-Category": "Storage",
+									"Total": 1022
+								},
+								{
+									"Category": "Office Supplies",
+									"Sub-Category": "Supplies",
+									"Total": 192
+								},
+								{
+									"Category": "Technology",
+									"Sub-Category": "Accessories",
+									"Total": 1079
+								},
+								{
+									"Category": "Technology",
+									"Sub-Category": "Copiers",
+									"Total": 73
+								},
+								{
+									"Category": "Technology",
+									"Sub-Category": "Machines",
+									"Total": 121
+								},
+								{
+									"Category": "Technology",
+									"Sub-Category": "Phones",
+									"Total": 1090
+								}
+							];
+							chartOptions = [{
+								"captions": [{ "Office Supplies": "Office Supplies", "Technology": "Technology", "Furniture": "Furniture" }],
+								"color": [{ "Office Supplies": "#f5c462", "Technology": "#f4a95d", "Furniture": "#c05f6e" }],
+								"xaxis": "Category",
+								"xaxisl1": "Sub-Category",
+								"yaxis": "Total"
+							}]
+
+</script>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <h2 style="position: relative; left:700px;">Implementing in Mathematics</h2>
+    <section class="services" id="services-section">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="flip-container" ontouchstart="this.classList.toggle('hover');">
+                        <div class="flipper first-service">
+                            <div class="front">
+                                <div class="icon">
+                                    <img src="img/heart-icon.png" alt="">
+                                </div>
+                                <h4>Grades</h4>
+                            </div>
+                            <div class="back">
+                                <p><font size="4">
+								Drilldown Charts can be used when educators wants to<br /> analyse the students' grades <br />in different classes to identify the stronger students. <br /><br />
+								This would allow them to identify different student strengths and allocate them to the right classes.
+								</font>
+								</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="flip-container" ontouchstart="this.classList.toggle('hover');">
+                        <div class="flipper second-service">
+                            <div class="front">
+                                <div class="icon">
+                                    <img src="img/home-icon.png" alt="">
+                                </div>
+                                <h4>Topics</h4>
+                            </div>
+                            <div class="back">
+                                <p><font size="4">
+									In mathematics, there are different sub-topics, <br />educators are able to use drilldown charts to go<br /> in-depth of what
+									each topic covers and <br />how well students are scoring.<br /><br />This could allow them to notice <br />which topics they should focus on
+									to help their students.
+									</font>
+								</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="flip-container" ontouchstart="this.classList.toggle('hover');">
+                        <div class="flipper third-service">
+                            <div class="front">
+                                <div class="icon">
+                                    <img src="img/revision-icon.png" alt="">
+                                </div>
+                                <h4>Improvements</h4>
+                            </div>
+                            <div class="back">
+                                <p><font size="4">
+									With drilldown charts, educators are able to identify improvements made by their students.<br /> <br />
+									It would provide them the results of their <br />students' grades over the months. <br /><br />
+									They can use this information and identify to help students who are lacking in improvements at a faster pace.
+								</font>
+								</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+	
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <script>window.jQuery || document.write('<script src="js/vendor/jquery-1.11.2.min.js"><\/script>')</script>
+
+    <script src="js/vendor/bootstrap.min.js"></script>
+    
+    <script src="js/datepicker.js"></script>
+    <script src="js/plugins.js"></script>
+    <script src="js/main.js"></script>
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js" type="text/javascript"></script>
+    <script type="text/javascript">
+    $(document).ready(function() 
+	{
+        // navigation click actions 
+        $('.scroll-link').on('click', function(event){
+            event.preventDefault();
+            var sectionID = $(this).attr("data-id");
+            scrollToID('#' + sectionID, 750);
+        });
+        // scroll to top action
+        $('.scroll-top').on('click', function(event) {
+            event.preventDefault();
+            $('html, body').animate({scrollTop:0}, 'slow');         
+        });
+        // mobile nav toggle
+        $('#nav-toggle').on('click', function (event) {
+            event.preventDefault();
+            $('#main-nav').toggleClass("open");
+        });
+    });
+    // scroll function
+    function scrollToID(id, speed){
+        var offSet = 0;
+        var targetOffset = $(id).offset().top - offSet;
+        var mainNav = $('#main-nav');
+        $('html,body').animate({scrollTop:targetOffset}, speed);
+        if (mainNav.hasClass("open")) {
+            mainNav.css("height", "1px").removeClass("in").addClass("collapse");
+            mainNav.removeClass("open");
+        }
+    }
+    if (typeof console === "undefined") {
+        console = {
+            log: function() { }
+        };
+    }
+    </script>
+</body>
+</html>
